@@ -3,9 +3,14 @@ kind: Task
 metadata:
   name: hello
 spec:
+  params:
+    - name: word
+      description: The word to print
+      default: bajja
+      type: string
   steps:
     - name: print-something
       image: registry.access.redhat.com/ubi8/ubi
       command:
         - /bin/bash
-      args: ['-c', 'echo bajja']
+      args: ['-c', 'echo $(params.word)']

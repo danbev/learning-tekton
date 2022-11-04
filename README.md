@@ -59,3 +59,32 @@ TaskRun started: hello-run-v2v9d
 Waiting for logs to be available...
 [print-something] bajja
 ```
+We can add parameters to this file and then apply the yaml again and then
+describe the task:
+```console
+$ tkn task describe hello
+Name:        hello
+Namespace:   default
+
+⚓ Params
+
+ NAME     TYPE     DESCRIPTION         DEFAULT VALUE
+ ∙ word   string   The word to print   bajja
+
+🦶 Steps
+
+ ∙ print-something
+
+🗂  Taskruns
+
+NAME              STARTED         DURATION   STATUS
+hello-run-v2v9d   3 minutes ago   28s        Succeeded
+```
+We can specify the param on the command line, and if it is not specified then
+tnf will promt us for the value:
+```console
+$ tkn task start --showlog --param word=Fletch hello
+TaskRun started: hello-run-257kg
+Waiting for logs to be available...
+[print-something] Fletch
+```
