@@ -1,10 +1,9 @@
 ## Learning Tekton
 
-
 ### Install Tekton
 Since Tekton runs on Kubernetes we need install Tekton to Kubernetes. In this
 case I'll use minishift which needs to be started first. After that we can
-install a Tekton [release](https://github.com/tektoncd/pipeline/releases)]:
+install a Tekton [release](https://github.com/tektoncd/pipeline/releases):
 ```console
 $ kubectl apply -f https://storage.googleapis.com/tekton-releases/pipeline/previous/v0.41.0/release.yaml
 ```
@@ -88,3 +87,8 @@ TaskRun started: hello-run-257kg
 Waiting for logs to be available...
 [print-something] Fletch
 ```
+
+### Task
+Is a collection of one or more steps to be executed.
+
+### 

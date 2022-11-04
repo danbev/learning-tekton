@@ -9,8 +9,14 @@ spec:
       default: bajja
       type: string
   steps:
-    - name: print-something
+    - name: print-command
       image: registry.access.redhat.com/ubi8/ubi
+      args: ['-c', 'echo $(params.word)']
       command:
         - /bin/bash
+    - name: print-script
+      image: registry.access.redhat.com/ubi8/ubi
       args: ['-c', 'echo $(params.word)']
+      script: |
+        #!/usr/bin/env bash
+        echo "echo from script $(params.word)"
