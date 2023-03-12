@@ -28,6 +28,7 @@ get-task:
 clean:
 	kubectl delete -f src/task.yaml
 	kubectl delete -f src/taskrun.yaml
+	kubectl delete -f src/chain.yaml
 
 install-chains:
 	kubectl apply --filename https://storage.googleapis.com/tekton-releases/chains/previous/v0.14.0/release.yaml
@@ -35,32 +36,34 @@ install-chains:
 cosign-keygen:
 	cosign generate-key-pair k8s://tekton-chains/signing-secrets
 
-
 configure-chains:
 	kubectl patch configmap chains-config -n tekton-chains -p='{"data":{"artifacts.oci.storage": "", "artifacts.taskrun.format":"in-toto", "artifacts.taskrun.storage": "tekton"}}'
 
+show-chains-configmap:
+	kubectl get configmap -n tekton-chains
 
 restart-chains:
 	kubectl delete po -n tekton-chains -l app=tekton-chains-controller
 
-create-chain-taskrun:
+deploy-chain-taskrun:
+	kubectl delete -f src/chain.yaml 
 	kubectl apply -f src/chain.yaml 
 
 describe-last-task:
 	tkn tr describe --last
 
-show-attestation:
+show-dsse:
 	@tkn tr describe --last -o jsonpath="{.metadata.annotations.chains\.tekton\.dev/signature-taskrun-$(shell tkn tr describe --last -o  jsonpath='{.metadata.uid}')}"
 
-show-attestation-base64-decode:
+show-dsse-base64-decode:
 	@tkn tr describe --last -o jsonpath="{.metadata.annotations.chains\.tekton\.dev/signature-taskrun-$(shell tkn tr describe --last -o  jsonpath='{.metadata.uid}')}" | base64 -d | jq
 
-show-attestation-payload:
+show-dsse-payload:
 	tkn tr describe --last -o jsonpath="{.metadata.annotations.chains\.tekton\.dev/signature-taskrun-$(shell tkn tr describe --last -o  jsonpath='{.metadata.uid}')}"  | base64 -d | jq -r '.payload' | base64 -d | jq
 
-save-attestation:
+save-dsse:
 	@tkn tr describe --last -o jsonpath="{.metadata.annotations.chains\.tekton\.dev/signature-taskrun-$(shell tkn tr describe --last -o  jsonpath='{.metadata.uid}')}" | base64 -d > attestation
 	@echo "saved attestation"
 
-verify-signature:
+verify-signature: save-dsse
 	cosign verify-blob -d --key k8s://tekton-chains/signing-secrets --signature attestation attestation

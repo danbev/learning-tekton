@@ -106,6 +106,23 @@ Is also a CRD and is about secure supply chain security. This has a a controller
 that "listens" for TaskRuns to complete and then takes a snapshot(?) and
 converts this snapshot to a format which it then signs.
 
+Taskruns and PipelineRuns can specify the outputs they produce using something
+called chains [type hinting]. So a RunTask can specify a list results that it
+produces. The Chains controller (I think) will scan/look for results with
+the name `*_DIGEST` which should be in the format `alt:digest`.
+
+```
+spec:
+  serviceAccountName: ""
+  taskSpec:
+    results:
+    - name: IMAGE_URL
+      type: string
+    - name: IMAGE_DIGEST
+      type: string
+```
+
+
 Install Tekton chains:
 ```console
 $ make install-chains
@@ -151,6 +168,10 @@ kubectl apply -f src/chain.yaml
 taskrun.tekton.dev/tekton-chains-example configured
 ```
 
+```console
+$ make 
+```
+
 And we can inspect the result of this taskrun using:
 ```console
 $ make describe-last-task 
@@ -162,64 +183,61 @@ Timeout:           1h0m0s
 Labels:
  app.kubernetes.io/managed-by=tekton-pipelines
 Annotations:
- chains.tekton.dev/cert-taskrun-f96d34f5-b711-4378-8200-9c0b67265922=
- chains.tekton.dev/chain-taskrun-f96d34f5-b711-4378-8200-9c0b67265922=
- chains.tekton.dev/payload-taskrun-f96d34f5-b711-4378-8200-9c0b67265922=eyJfdHlwZSI6Imh0dHBzOi8vaW4tdG90by5pby9TdGF0ZW1lbnQvdjAuMSIsInByZWRpY2F0ZVR5cGUiOiJodHRwczovL3Nsc2EuZGV2L3Byb3ZlbmFuY2UvdjAuMiIsInN1YmplY3QiOlt7Im5hbWUiOiJnY3IuaW8vZm9vL2JhciIsImRpZ2VzdCI6eyJzaGEyNTYiOiIwNWY5NWIyNmVkMTA2NjhiNzE4M2MxZTJkYTk4NjEwZTkxMzcyZmE5ZjUxMDA0NmQ0Y2U1ODEyYWRkYWQ4NmI1In19XSwicHJlZGljYXRlIjp7ImJ1aWxkZXIiOnsiaWQiOiJodHRwczovL3Rla3Rvbi5kZXYvY2hhaW5zL3YyIn0sImJ1aWxkVHlwZSI6InRla3Rvbi5kZXYvdjFiZXRhMS9UYXNrUnVuIiwiaW52b2NhdGlvbiI6eyJjb25maWdTb3VyY2UiOnt9LCJwYXJhbWV0ZXJzIjp7fX0sImJ1aWxkQ29uZmlnIjp7InN0ZXBzIjpbeyJlbnRyeVBvaW50IjoiIyEvdXNyL2Jpbi9lbnYgc2hcbmVjaG8gJ2djci5pby9mb28vYmFyJyB8IHRlZSAvdGVrdG9uL3Jlc3VsdHMvSU1BR0VfVVJMXG5lY2hvICdzaGEyNTY6MDVmOTViMjZlZDEwNjY4YjcxODNjMWUyZGE5ODYxMGU5MTM3MmZhOWY1MTAwNDZkNGNlNTgxMmFkZGFkODZiNScgfCB0ZWUgL3Rla3Rvbi9yZXN1bHRzL0lNQUdFX0RJR0VTVCIsImFyZ3VtZW50cyI6bnVsbCwiZW52aXJvbm1lbnQiOnsiY29udGFpbmVyIjoiY3JlYXRlLWltYWdlIiwiaW1hZ2UiOiJkb2NrZXIuaW8vbGlicmFyeS9idXN5Ym94QHNoYTI1NjpjMTE4ZjUzODM2NTM2OTIwN2MxMmU1Nzk0YzNjYmZiN2IwNDJkOTUwYWY1OTBhZTZjMjg3ZWRlNzRmMjliN2Q0In0sImFubm90YXRpb25zIjpudWxsfV19LCJtZXRhZGF0YSI6eyJidWlsZFN0YXJ0ZWRPbiI6IjIwMjMtMDMtMTFUMDk6NDQ6NDVaIiwiYnVpbGRGaW5pc2hlZE9uIjoiMjAyMy0wMy0xMVQwOTo0NDo1MFoiLCJjb21wbGV0ZW5lc3MiOnsicGFyYW1ldGVycyI6ZmFsc2UsImVudmlyb25tZW50IjpmYWxzZSwibWF0ZXJpYWxzIjpmYWxzZX0sInJlcHJvZHVjaWJsZSI6ZmFsc2V9fX0=
- chains.tekton.dev/signature-taskrun-f96d34f5-b711-4378-8200-9c0b67265922=eyJwYXlsb2FkVHlwZSI6ImFwcGxpY2F0aW9uL3ZuZC5pbi10b3RvK2pzb24iLCJwYXlsb2FkIjoiZXlKZmRIbHdaU0k2SW1oMGRIQnpPaTh2YVc0dGRHOTBieTVwYnk5VGRHRjBaVzFsYm5RdmRqQXVNU0lzSW5CeVpXUnBZMkYwWlZSNWNHVWlPaUpvZEhSd2N6b3ZMM05zYzJFdVpHVjJMM0J5YjNabGJtRnVZMlV2ZGpBdU1pSXNJbk4xWW1wbFkzUWlPbHQ3SW01aGJXVWlPaUpuWTNJdWFXOHZabTl2TDJKaGNpSXNJbVJwWjJWemRDSTZleUp6YUdFeU5UWWlPaUl3TldZNU5XSXlObVZrTVRBMk5qaGlOekU0TTJNeFpUSmtZVGs0TmpFd1pUa3hNemN5Wm1FNVpqVXhNREEwTm1RMFkyVTFPREV5WVdSa1lXUTRObUkxSW4xOVhTd2ljSEpsWkdsallYUmxJanA3SW1KMWFXeGtaWElpT25zaWFXUWlPaUpvZEhSd2N6b3ZMM1JsYTNSdmJpNWtaWFl2WTJoaGFXNXpMM1l5SW4wc0ltSjFhV3hrVkhsd1pTSTZJblJsYTNSdmJpNWtaWFl2ZGpGaVpYUmhNUzlVWVhOclVuVnVJaXdpYVc1MmIyTmhkR2x2YmlJNmV5SmpiMjVtYVdkVGIzVnlZMlVpT250OUxDSndZWEpoYldWMFpYSnpJanA3Zlgwc0ltSjFhV3hrUTI5dVptbG5JanA3SW5OMFpYQnpJanBiZXlKbGJuUnllVkJ2YVc1MElqb2lJeUV2ZFhOeUwySnBiaTlsYm5ZZ2MyaGNibVZqYUc4Z0oyZGpjaTVwYnk5bWIyOHZZbUZ5SnlCOElIUmxaU0F2ZEdWcmRHOXVMM0psYzNWc2RITXZTVTFCUjBWZlZWSk1YRzVsWTJodklDZHphR0V5TlRZNk1EVm1PVFZpTWpabFpERXdOalk0WWpjeE9ETmpNV1V5WkdFNU9EWXhNR1U1TVRNM01tWmhPV1kxTVRBd05EWmtOR05sTlRneE1tRmtaR0ZrT0RaaU5TY2dmQ0IwWldVZ0wzUmxhM1J2Ymk5eVpYTjFiSFJ6TDBsTlFVZEZYMFJKUjBWVFZDSXNJbUZ5WjNWdFpXNTBjeUk2Ym5Wc2JDd2laVzUyYVhKdmJtMWxiblFpT25zaVkyOXVkR0ZwYm1WeUlqb2lZM0psWVhSbExXbHRZV2RsSWl3aWFXMWhaMlVpT2lKa2IyTnJaWEl1YVc4dmJHbGljbUZ5ZVM5aWRYTjVZbTk0UUhOb1lUSTFOanBqTVRFNFpqVXpPRE0yTlRNMk9USXdOMk14TW1VMU56azBZek5qWW1aaU4ySXdOREprT1RVd1lXWTFPVEJoWlRaak1qZzNaV1JsTnpSbU1qbGlOMlEwSW4wc0ltRnVibTkwWVhScGIyNXpJanB1ZFd4c2ZWMTlMQ0p0WlhSaFpHRjBZU0k2ZXlKaWRXbHNaRk4wWVhKMFpXUlBiaUk2SWpJd01qTXRNRE10TVRGVU1EazZORFE2TkRWYUlpd2lZblZwYkdSR2FXNXBjMmhsWkU5dUlqb2lNakF5TXkwd015MHhNVlF3T1RvME5EbzFNRm9pTENKamIyMXdiR1YwWlc1bGMzTWlPbnNpY0dGeVlXMWxkR1Z5Y3lJNlptRnNjMlVzSW1WdWRtbHliMjV0Wlc1MElqcG1ZV3h6WlN3aWJXRjBaWEpwWVd4eklqcG1ZV3h6Wlgwc0luSmxjSEp2WkhWamFXSnNaU0k2Wm1Gc2MyVjlmWDA9Iiwic2lnbmF0dXJlcyI6W3sia2V5aWQiOiJTSEEyNTY6Y2FFSldZSlN4eTFTVkYyS09ibTVScjNZdDZ4SWI0VDJ3NTZGSHRDZzhXSSIsInNpZyI6Ik1FVUNJR3U2U01iZVJ6VEdaMXVJWGhrOUFMK2F4Zmh5VkZWUUVycWZEaXlzaVgrU0FpRUEvT2FDVHd0TVhmUUFKVk9uSm4xVkdVVHU5RTlLNHVaYURXTlpmTThzTmEwPSJ9XX0=
+ chains.tekton.dev/cert-taskrun-dc37cde4-4d57-47eb-9e10-67153e440db2=
+ chains.tekton.dev/chain-taskrun-dc37cde4-4d57-47eb-9e10-67153e440db2=
+ chains.tekton.dev/payload-taskrun-dc37cde4-4d57-47eb-9e10-67153e440db2=eyJfdHlwZSI6Imh0dHBzOi8vaW4tdG90by5pby9TdGF0ZW1lbnQvdjAuMSIsInByZWRpY2F0ZVR5cGUiOiJodHRwczovL3Nsc2EuZGV2L3Byb3ZlbmFuY2UvdjAuMiIsInN1YmplY3QiOm51bGwsInByZWRpY2F0ZSI6eyJidWlsZGVyIjp7ImlkIjoiaHR0cHM6Ly90ZWt0b24uZGV2L2NoYWlucy92MiJ9LCJidWlsZFR5cGUiOiJ0ZWt0b24uZGV2L3YxYmV0YTEvVGFza1J1biIsImludm9jYXRpb24iOnsiY29uZmlnU291cmNlIjp7fSwicGFyYW1ldGVycyI6e319LCJidWlsZENvbmZpZyI6eyJzdGVwcyI6W3siZW50cnlQb2ludCI6IiMhL3Vzci9iaW4vZW52IHNoXG5lY2hvICdnY3IuaW8vZm9vL2JhcicgfCB0ZWUgL3Rla3Rvbi9yZXN1bHRzL1RFU1RfVVJMXG5lY2hvICdzaGEyNTY6MDVmOTViMjZlZDEwNjY4YjcxODNjMWUyZGE5ODYxMGU5MTM3MmZhOWY1MTAwNDZkNGNlNTgxMmFkZGFkODZiNScgfCB0ZWUgL3Rla3Rvbi9yZXN1bHRzL1RFU1RfRElHRVNUIiwiYXJndW1lbnRzIjpudWxsLCJlbnZpcm9ubWVudCI6eyJjb250YWluZXIiOiJjcmVhdGUtaW1hZ2UiLCJpbWFnZSI6ImRvY2tlci5pby9saWJyYXJ5L2J1c3lib3hAc2hhMjU2OmMxMThmNTM4MzY1MzY5MjA3YzEyZTU3OTRjM2NiZmI3YjA0MmQ5NTBhZjU5MGFlNmMyODdlZGU3NGYyOWI3ZDQifSwiYW5ub3RhdGlvbnMiOm51bGx9XX0sIm1ldGFkYXRhIjp7ImJ1aWxkU3RhcnRlZE9uIjoiMjAyMy0wMy0xMlQwOTo0MDoxNloiLCJidWlsZEZpbmlzaGVkT24iOiIyMDIzLTAzLTEyVDA5OjQwOjIxWiIsImNvbXBsZXRlbmVzcyI6eyJwYXJhbWV0ZXJzIjpmYWxzZSwiZW52aXJvbm1lbnQiOmZhbHNlLCJtYXRlcmlhbHMiOmZhbHNlfSwicmVwcm9kdWNpYmxlIjpmYWxzZX19fQ==
+ chains.tekton.dev/signature-taskrun-dc37cde4-4d57-47eb-9e10-67153e440db2=eyJwYXlsb2FkVHlwZSI6ImFwcGxpY2F0aW9uL3ZuZC5pbi10b3RvK2pzb24iLCJwYXlsb2FkIjoiZXlKZmRIbHdaU0k2SW1oMGRIQnpPaTh2YVc0dGRHOTBieTVwYnk5VGRHRjBaVzFsYm5RdmRqQXVNU0lzSW5CeVpXUnBZMkYwWlZSNWNHVWlPaUpvZEhSd2N6b3ZMM05zYzJFdVpHVjJMM0J5YjNabGJtRnVZMlV2ZGpBdU1pSXNJbk4xWW1wbFkzUWlPbTUxYkd3c0luQnlaV1JwWTJGMFpTSTZleUppZFdsc1pHVnlJanA3SW1sa0lqb2lhSFIwY0hNNkx5OTBaV3QwYjI0dVpHVjJMMk5vWVdsdWN5OTJNaUo5TENKaWRXbHNaRlI1Y0dVaU9pSjBaV3QwYjI0dVpHVjJMM1l4WW1WMFlURXZWR0Z6YTFKMWJpSXNJbWx1ZG05allYUnBiMjRpT25zaVkyOXVabWxuVTI5MWNtTmxJanA3ZlN3aWNHRnlZVzFsZEdWeWN5STZlMzE5TENKaWRXbHNaRU52Ym1acFp5STZleUp6ZEdWd2N5STZXM3NpWlc1MGNubFFiMmx1ZENJNklpTWhMM1Z6Y2k5aWFXNHZaVzUySUhOb1hHNWxZMmh2SUNkblkzSXVhVzh2Wm05dkwySmhjaWNnZkNCMFpXVWdMM1JsYTNSdmJpOXlaWE4xYkhSekwxUkZVMVJmVlZKTVhHNWxZMmh2SUNkemFHRXlOVFk2TURWbU9UVmlNalpsWkRFd05qWTRZamN4T0ROak1XVXlaR0U1T0RZeE1HVTVNVE0zTW1aaE9XWTFNVEF3TkRaa05HTmxOVGd4TW1Ga1pHRmtPRFppTlNjZ2ZDQjBaV1VnTDNSbGEzUnZiaTl5WlhOMWJIUnpMMVJGVTFSZlJFbEhSVk5VSWl3aVlYSm5kVzFsYm5SeklqcHVkV3hzTENKbGJuWnBjbTl1YldWdWRDSTZleUpqYjI1MFlXbHVaWElpT2lKamNtVmhkR1V0YVcxaFoyVWlMQ0pwYldGblpTSTZJbVJ2WTJ0bGNpNXBieTlzYVdKeVlYSjVMMkoxYzNsaWIzaEFjMmhoTWpVMk9tTXhNVGhtTlRNNE16WTFNelk1TWpBM1l6RXlaVFUzT1RSak0yTmlabUkzWWpBME1tUTVOVEJoWmpVNU1HRmxObU15T0RkbFpHVTNOR1l5T1dJM1pEUWlmU3dpWVc1dWIzUmhkR2x2Ym5NaU9tNTFiR3g5WFgwc0ltMWxkR0ZrWVhSaElqcDdJbUoxYVd4a1UzUmhjblJsWkU5dUlqb2lNakF5TXkwd015MHhNbFF3T1RvME1Eb3hObG9pTENKaWRXbHNaRVpwYm1semFHVmtUMjRpT2lJeU1ESXpMVEF6TFRFeVZEQTVPalF3T2pJeFdpSXNJbU52YlhCc1pYUmxibVZ6Y3lJNmV5SndZWEpoYldWMFpYSnpJanBtWVd4elpTd2laVzUyYVhKdmJtMWxiblFpT21aaGJITmxMQ0p0WVhSbGNtbGhiSE1pT21aaGJITmxmU3dpY21Wd2NtOWtkV05wWW14bElqcG1ZV3h6WlgxOWZRPT0iLCJzaWduYXR1cmVzIjpbeyJrZXlpZCI6IlNIQTI1NjpjYUVKV1lKU3h5MVNWRjJLT2JtNVJyM1l0NnhJYjRUMnc1NkZIdENnOFdJIiwic2lnIjoiTUVRQ0lDdXZnMFhxd0NFQ0V5U2tvSG1zVEora3RXOUlTekdYc3AzR1FEYUJTYW02QWlBai9nKzNkdUR0RUk5dWQ0YUYvRmI0dzl5NW9nN1VOcm1PNXQ5VHhVZlZydz09In1dfQ==
  chains.tekton.dev/signed=true
  pipeline.tekton.dev/release=e38d112
 
 🌡️  Status
 
 STARTED         DURATION    STATUS
-7 minutes ago   5s          Succeeded
+4 minutes ago   5s          Succeeded
 
 📝 Results
 
- NAME             VALUE
- ∙ IMAGE_DIGEST   sha256:05f95b26ed10668b7183c1e2da98610e91372fa9f510046d4ce5812addad86b5
- ∙ IMAGE_URL      gcr.io/foo/bar
+ NAME            VALUE
+ ∙ TEST_DIGEST   sha256:05f95b26ed10668b7183c1e2da98610e91372fa9f510046d4ce5812addad86b5
+ ∙ TEST_URL      gcr.io/foo/bar
 
 🦶 Steps
 
  NAME             STATUS
  ∙ create-image   Completed
+
 ```
-Notice that the task has an IMAGE_DIGEST result which I'm guessing at the moment
-is used by the chain controller.
-Also notice the
-`chains.tekton.dev/signature-taskrun-f96d34f5-b711-4378-8200-9c0b67265922`
-annotation which contains a base64 encoded value. So lets decode this and
-see what it contains:
+Notice the `chains.tekton.dev/signature-taskrun-f96d34f5-b711-4378-8200-9c0b67265922`
+annotation which contains a base64 encoded value.
 ```console
-$ make chain-attestation-base64-decode
+$ make show-dsse
+eyJwYXlsb2FkVHlwZSI6ImFwcGxpY2F0aW9uL3ZuZC5pbi10b3RvK2pzb24iLCJwYXlsb2FkIjoiZXlKZmRIbHdaU0k2SW1oMGRIQnpPaTh2YVc0dGRHOTBieTVwYnk5VGRHRjBaVzFsYm5RdmRqQXVNU0lzSW5CeVpXUnBZMkYwWlZSNWNHVWlPaUpvZEhSd2N6b3ZMM05zYzJFdVpHVjJMM0J5YjNabGJtRnVZMlV2ZGpBdU1pSXNJbk4xWW1wbFkzUWlPbTUxYkd3c0luQnlaV1JwWTJGMFpTSTZleUppZFdsc1pHVnlJanA3SW1sa0lqb2lhSFIwY0hNNkx5OTBaV3QwYjI0dVpHVjJMMk5vWVdsdWN5OTJNaUo5TENKaWRXbHNaRlI1Y0dVaU9pSjBaV3QwYjI0dVpHVjJMM1l4WW1WMFlURXZWR0Z6YTFKMWJpSXNJbWx1ZG05allYUnBiMjRpT25zaVkyOXVabWxuVTI5MWNtTmxJanA3ZlN3aWNHRnlZVzFsZEdWeWN5STZlMzE5TENKaWRXbHNaRU52Ym1acFp5STZleUp6ZEdWd2N5STZXM3NpWlc1MGNubFFiMmx1ZENJNklpTWhMM1Z6Y2k5aWFXNHZaVzUySUhOb1hHNWxZMmh2SUNkblkzSXVhVzh2Wm05dkwySmhjaWNnZkNCMFpXVWdMM1JsYTNSdmJpOXlaWE4xYkhSekwxUkZVMVJmVlZKTVhHNWxZMmh2SUNkemFHRXlOVFk2TURWbU9UVmlNalpsWkRFd05qWTRZamN4T0ROak1XVXlaR0U1T0RZeE1HVTVNVE0zTW1aaE9XWTFNVEF3TkRaa05HTmxOVGd4TW1Ga1pHRmtPRFppTlNjZ2ZDQjBaV1VnTDNSbGEzUnZiaTl5WlhOMWJIUnpMMVJGVTFSZlJFbEhSVk5VSWl3aVlYSm5kVzFsYm5SeklqcHVkV3hzTENKbGJuWnBjbTl1YldWdWRDSTZleUpqYjI1MFlXbHVaWElpT2lKamNtVmhkR1V0YVcxaFoyVWlMQ0pwYldGblpTSTZJbVJ2WTJ0bGNpNXBieTlzYVdKeVlYSjVMMkoxYzNsaWIzaEFjMmhoTWpVMk9tTXhNVGhtTlRNNE16WTFNelk1TWpBM1l6RXlaVFUzT1RSak0yTmlabUkzWWpBME1tUTVOVEJoWmpVNU1HRmxObU15T0RkbFpHVTNOR1l5T1dJM1pEUWlmU3dpWVc1dWIzUmhkR2x2Ym5NaU9tNTFiR3g5WFgwc0ltMWxkR0ZrWVhSaElqcDdJbUoxYVd4a1UzUmhjblJsWkU5dUlqb2lNakF5TXkwd015MHhNbFF3T1RvME1Eb3hObG9pTENKaWRXbHNaRVpwYm1semFHVmtUMjRpT2lJeU1ESXpMVEF6TFRFeVZEQTVPalF3T2pJeFdpSXNJbU52YlhCc1pYUmxibVZ6Y3lJNmV5SndZWEpoYldWMFpYSnpJanBtWVd4elpTd2laVzUyYVhKdmJtMWxiblFpT21aaGJITmxMQ0p0WVhSbGNtbGhiSE1pT21aaGJITmxmU3dpY21Wd2NtOWtkV05wWW14bElqcG1ZV3h6WlgxOWZRPT0iLCJzaWduYXR1cmVzIjpbeyJrZXlpZCI6IlNIQTI1NjpjYUVKV1lKU3h5MVNWRjJLT2JtNVJyM1l0NnhJYjRUMnc1NkZIdENnOFdJIiwic2lnIjoiTUVRQ0lDdXZnMFhxd0NFQ0V5U2tvSG1zVEora3RXOUlTekdYc3AzR1FEYUJTYW02QWlBai9nKzNkdUR0RUk5dWQ0YUYvRmI0dzl5NW9nN1VOcm1PNXQ5VHhVZlZydz09In1dfQ==
+```
+Lets decode this and see what it contains:
+```console
+$ make show-dsse-base64-decode 
 {
   "payloadType": "application/vnd.in-toto+json",
-  "payload": "eyJfdHlwZSI6Imh0dHBzOi8vaW4tdG90by5pby9TdGF0ZW1lbnQvdjAuMSIsInByZWRpY2F0ZVR5cGUiOiJodHRwczovL3Nsc2EuZGV2L3Byb3ZlbmFuY2UvdjAuMiIsInN1YmplY3QiOlt7Im5hbWUiOiJnY3IuaW8vZm9vL2JhciIsImRpZ2VzdCI6eyJzaGEyNTYiOiIwNWY5NWIyNmVkMTA2NjhiNzE4M2MxZTJkYTk4NjEwZTkxMzcyZmE5ZjUxMDA0NmQ0Y2U1ODEyYWRkYWQ4NmI1In19XSwicHJlZGljYXRlIjp7ImJ1aWxkZXIiOnsiaWQiOiJodHRwczovL3Rla3Rvbi5kZXYvY2hhaW5zL3YyIn0sImJ1aWxkVHlwZSI6InRla3Rvbi5kZXYvdjFiZXRhMS9UYXNrUnVuIiwiaW52b2NhdGlvbiI6eyJjb25maWdTb3VyY2UiOnt9LCJwYXJhbWV0ZXJzIjp7fX0sImJ1aWxkQ29uZmlnIjp7InN0ZXBzIjpbeyJlbnRyeVBvaW50IjoiIyEvdXNyL2Jpbi9lbnYgc2hcbmVjaG8gJ2djci5pby9mb28vYmFyJyB8IHRlZSAvdGVrdG9uL3Jlc3VsdHMvSU1BR0VfVVJMXG5lY2hvICdzaGEyNTY6MDVmOTViMjZlZDEwNjY4YjcxODNjMWUyZGE5ODYxMGU5MTM3MmZhOWY1MTAwNDZkNGNlNTgxMmFkZGFkODZiNScgfCB0ZWUgL3Rla3Rvbi9yZXN1bHRzL0lNQUdFX0RJR0VTVCIsImFyZ3VtZW50cyI6bnVsbCwiZW52aXJvbm1lbnQiOnsiY29udGFpbmVyIjoiY3JlYXRlLWltYWdlIiwiaW1hZ2UiOiJkb2NrZXIuaW8vbGlicmFyeS9idXN5Ym94QHNoYTI1NjpjMTE4ZjUzODM2NTM2OTIwN2MxMmU1Nzk0YzNjYmZiN2IwNDJkOTUwYWY1OTBhZTZjMjg3ZWRlNzRmMjliN2Q0In0sImFubm90YXRpb25zIjpudWxsfV19LCJtZXRhZGF0YSI6eyJidWlsZFN0YXJ0ZWRPbiI6IjIwMjMtMDMtMTFUMDk6NDQ6NDVaIiwiYnVpbGRGaW5pc2hlZE9uIjoiMjAyMy0wMy0xMVQwOTo0NDo1MFoiLCJjb21wbGV0ZW5lc3MiOnsicGFyYW1ldGVycyI6ZmFsc2UsImVudmlyb25tZW50IjpmYWxzZSwibWF0ZXJpYWxzIjpmYWxzZX0sInJlcHJvZHVjaWJsZSI6ZmFsc2V9fX0=",
+  "payload": "eyJfdHlwZSI6Imh0dHBzOi8vaW4tdG90by5pby9TdGF0ZW1lbnQvdjAuMSIsInByZWRpY2F0ZVR5cGUiOiJodHRwczovL3Nsc2EuZGV2L3Byb3ZlbmFuY2UvdjAuMiIsInN1YmplY3QiOm51bGwsInByZWRpY2F0ZSI6eyJidWlsZGVyIjp7ImlkIjoiaHR0cHM6Ly90ZWt0b24uZGV2L2NoYWlucy92MiJ9LCJidWlsZFR5cGUiOiJ0ZWt0b24uZGV2L3YxYmV0YTEvVGFza1J1biIsImludm9jYXRpb24iOnsiY29uZmlnU291cmNlIjp7fSwicGFyYW1ldGVycyI6e319LCJidWlsZENvbmZpZyI6eyJzdGVwcyI6W3siZW50cnlQb2ludCI6IiMhL3Vzci9iaW4vZW52IHNoXG5lY2hvICdnY3IuaW8vZm9vL2JhcicgfCB0ZWUgL3Rla3Rvbi9yZXN1bHRzL1RFU1RfVVJMXG5lY2hvICdzaGEyNTY6MDVmOTViMjZlZDEwNjY4YjcxODNjMWUyZGE5ODYxMGU5MTM3MmZhOWY1MTAwNDZkNGNlNTgxMmFkZGFkODZiNScgfCB0ZWUgL3Rla3Rvbi9yZXN1bHRzL1RFU1RfRElHRVNUIiwiYXJndW1lbnRzIjpudWxsLCJlbnZpcm9ubWVudCI6eyJjb250YWluZXIiOiJjcmVhdGUtaW1hZ2UiLCJpbWFnZSI6ImRvY2tlci5pby9saWJyYXJ5L2J1c3lib3hAc2hhMjU2OmMxMThmNTM4MzY1MzY5MjA3YzEyZTU3OTRjM2NiZmI3YjA0MmQ5NTBhZjU5MGFlNmMyODdlZGU3NGYyOWI3ZDQifSwiYW5ub3RhdGlvbnMiOm51bGx9XX0sIm1ldGFkYXRhIjp7ImJ1aWxkU3RhcnRlZE9uIjoiMjAyMy0wMy0xMlQwOTo0MDoxNloiLCJidWlsZEZpbmlzaGVkT24iOiIyMDIzLTAzLTEyVDA5OjQwOjIxWiIsImNvbXBsZXRlbmVzcyI6eyJwYXJhbWV0ZXJzIjpmYWxzZSwiZW52aXJvbm1lbnQiOmZhbHNlLCJtYXRlcmlhbHMiOmZhbHNlfSwicmVwcm9kdWNpYmxlIjpmYWxzZX19fQ==",
   "signatures": [
     {
       "keyid": "SHA256:caEJWYJSxy1SVF2KObm5Rr3Yt6xIb4T2w56FHtCg8WI",
-      "sig": "MEUCIGu6SMbeRzTGZ1uIXhk9AL+axfhyVFVQErqfDiysiX+SAiEA/OaCTwtMXfQAJVOnJn1VGUTu9E9K4uZaDWNZfM8sNa0="
+      "sig": "MEQCICuvg0XqwCECEySkoHmsTJ+ktW9ISzGXsp3GQDaBSam6AiAj/g+3duDtEI9ud4aF/Fb4w9y5og7UNrmO5t9TxUfVrw=="
     }
   ]
 }
 ```
-Now this looks familiar. What we have is an [in-toto attestation].
+Now this looks familiar. What we have here is an [Dead Simple Signing Envelope]
+(DSSE).
+
 Lets inspect the `payload`:
 ```console
-$ make show-attestation-payload
-tkn tr describe --last -o jsonpath="{.metadata.annotations.chains\.tekton\.dev/signature-taskrun-f96d34f5-b711-4378-8200-9c0b67265922}"  | base64 -d | jq -r '.payload' | base64 -d | jq
+$ make show-dsse-payload
+tkn tr describe --last -o jsonpath="{.metadata.annotations.chains\.tekton\.dev/signature-taskrun-dc37cde4-4d57-47eb-9e10-67153e440db2}"  | base64 -d | jq -r '.payload' | base64 -d | jq
 {
   "_type": "https://in-toto.io/Statement/v0.1",
   "predicateType": "https://slsa.dev/provenance/v0.2",
-  "subject": [
-    {
-      "name": "gcr.io/foo/bar",
-      "digest": {
-        "sha256": "05f95b26ed10668b7183c1e2da98610e91372fa9f510046d4ce5812addad86b5"
-      }
-    }
-  ],
+  "subject": null,
   "predicate": {
     "builder": {
       "id": "https://tekton.dev/chains/v2"
@@ -232,7 +250,7 @@ tkn tr describe --last -o jsonpath="{.metadata.annotations.chains\.tekton\.dev/s
     "buildConfig": {
       "steps": [
         {
-          "entryPoint": "#!/usr/bin/env sh\necho 'gcr.io/foo/bar' | tee /tekton/results/IMAGE_URL\necho 'sha256:05f95b26ed10668b7183c1e2da98610e91372fa9f510046d4ce5812addad86b5' | tee /tekton/results/IMAGE_DIGEST",
+          "entryPoint": "#!/usr/bin/env sh\necho 'gcr.io/foo/bar' | tee /tekton/results/TEST_URL\necho 'sha256:05f95b26ed10668b7183c1e2da98610e91372fa9f510046d4ce5812addad86b5' | tee /tekton/results/TEST_DIGEST",
           "arguments": null,
           "environment": {
             "container": "create-image",
@@ -243,8 +261,8 @@ tkn tr describe --last -o jsonpath="{.metadata.annotations.chains\.tekton\.dev/s
       ]
     },
     "metadata": {
-      "buildStartedOn": "2023-03-11T09:44:45Z",
-      "buildFinishedOn": "2023-03-11T09:44:50Z",
+      "buildStartedOn": "2023-03-12T09:40:16Z",
+      "buildFinishedOn": "2023-03-12T09:40:21Z",
       "completeness": {
         "parameters": false,
         "environment": false,
@@ -265,3 +283,5 @@ Verified OK
 ```
 
 [in-toto attestation]: https://github.com/danbev/learning-crypto/blob/main/notes/in-toto-attestations.md#in-toto-attestation
+[type hinting]: https://tekton.dev/docs/chains/intoto/#type-hinting
+[Dead Simple Signing Envelope]: https://github.com/danbev/learning-crypto/blob/main/notes/dsse.md
