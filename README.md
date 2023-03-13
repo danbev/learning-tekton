@@ -80,6 +80,9 @@ Defaulted container "step-print-command" out of: step-print-command, step-print-
 Is a collection of one or more steps to be executed.
 For an example of a task see [task.yaml](src/task.yaml)
 
+A task can emit string `results` which can be inspected, and can also be used
+in Pipelines to pass data from one task to the next.
+
 ### TaskRun
 Is a definition that when sent to kuberenetes will instantiate a specific task
 and run it (in a pod).
@@ -100,6 +103,20 @@ runs                                                                     tekton.
 taskruns                          tr,trs                                 tekton.dev/v1beta1                     true         TaskRun
 tasks                                                                    tekton.dev/v1beta1                     true         Task
 ```
+
+### Pipeline
+Is a collection of `Task`s and allow the tasks to be run an a specific order.
+Each `Task` will execute as a Pod.
+
+A pipeline must have at least one task in its `tasks` element which can either
+be a `taskRef` or a `taskSpec`
+
+### PipelineRun
+Allows a pipeline to be instantiated and executed and does so by creating
+TaskRuns for each task in the pipeline.
+
+### Bundles
+TODO:
  
 ## Tekton chains
 Is also a CRD and is about secure supply chain security. This has a a controller
