@@ -133,9 +133,9 @@ spec:
   serviceAccountName: ""
   taskSpec:
     results:
-    - name: IMAGE_URL
+    - name: TEST_URL
       type: string
-    - name: IMAGE_DIGEST
+    - name: TEST_DIGEST
       type: string
 ```
 
