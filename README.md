@@ -185,10 +185,6 @@ kubectl apply -f src/chain.yaml
 taskrun.tekton.dev/tekton-chains-example configured
 ```
 
-```console
-$ make 
-```
-
 And we can inspect the result of this taskrun using:
 ```console
 $ make describe-last-task 
