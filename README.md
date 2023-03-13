@@ -221,7 +221,7 @@ STARTED         DURATION    STATUS
 
 ```
 Notice the `chains.tekton.dev/signature-taskrun-f96d34f5-b711-4378-8200-9c0b67265922`
-annotation which contains a base64 encoded value.
+annotation which contains a base64 encoded value:
 ```console
 $ make show-dsse
 eyJwYXlsb2FkVHlwZSI6ImFwcGxpY2F0aW9uL3ZuZC5pbi10b3RvK2pzb24iLCJwYXlsb2FkIjoiZXlKZmRIbHdaU0k2SW1oMGRIQnpPaTh2YVc0dGRHOTBieTVwYnk5VGRHRjBaVzFsYm5RdmRqQXVNU0lzSW5CeVpXUnBZMkYwWlZSNWNHVWlPaUpvZEhSd2N6b3ZMM05zYzJFdVpHVjJMM0J5YjNabGJtRnVZMlV2ZGpBdU1pSXNJbk4xWW1wbFkzUWlPbTUxYkd3c0luQnlaV1JwWTJGMFpTSTZleUppZFdsc1pHVnlJanA3SW1sa0lqb2lhSFIwY0hNNkx5OTBaV3QwYjI0dVpHVjJMMk5vWVdsdWN5OTJNaUo5TENKaWRXbHNaRlI1Y0dVaU9pSjBaV3QwYjI0dVpHVjJMM1l4WW1WMFlURXZWR0Z6YTFKMWJpSXNJbWx1ZG05allYUnBiMjRpT25zaVkyOXVabWxuVTI5MWNtTmxJanA3ZlN3aWNHRnlZVzFsZEdWeWN5STZlMzE5TENKaWRXbHNaRU52Ym1acFp5STZleUp6ZEdWd2N5STZXM3NpWlc1MGNubFFiMmx1ZENJNklpTWhMM1Z6Y2k5aWFXNHZaVzUySUhOb1hHNWxZMmh2SUNkblkzSXVhVzh2Wm05dkwySmhjaWNnZkNCMFpXVWdMM1JsYTNSdmJpOXlaWE4xYkhSekwxUkZVMVJmVlZKTVhHNWxZMmh2SUNkemFHRXlOVFk2TURWbU9UVmlNalpsWkRFd05qWTRZamN4T0ROak1XVXlaR0U1T0RZeE1HVTVNVE0zTW1aaE9XWTFNVEF3TkRaa05HTmxOVGd4TW1Ga1pHRmtPRFppTlNjZ2ZDQjBaV1VnTDNSbGEzUnZiaTl5WlhOMWJIUnpMMVJGVTFSZlJFbEhSVk5VSWl3aVlYSm5kVzFsYm5SeklqcHVkV3hzTENKbGJuWnBjbTl1YldWdWRDSTZleUpqYjI1MFlXbHVaWElpT2lKamNtVmhkR1V0YVcxaFoyVWlMQ0pwYldGblpTSTZJbVJ2WTJ0bGNpNXBieTlzYVdKeVlYSjVMMkoxYzNsaWIzaEFjMmhoTWpVMk9tTXhNVGhtTlRNNE16WTFNelk1TWpBM1l6RXlaVFUzT1RSak0yTmlabUkzWWpBME1tUTVOVEJoWmpVNU1HRmxObU15T0RkbFpHVTNOR1l5T1dJM1pEUWlmU3dpWVc1dWIzUmhkR2x2Ym5NaU9tNTFiR3g5WFgwc0ltMWxkR0ZrWVhSaElqcDdJbUoxYVd4a1UzUmhjblJsWkU5dUlqb2lNakF5TXkwd015MHhNbFF3T1RvME1Eb3hObG9pTENKaWRXbHNaRVpwYm1semFHVmtUMjRpT2lJeU1ESXpMVEF6TFRFeVZEQTVPalF3T2pJeFdpSXNJbU52YlhCc1pYUmxibVZ6Y3lJNmV5SndZWEpoYldWMFpYSnpJanBtWVd4elpTd2laVzUyYVhKdmJtMWxiblFpT21aaGJITmxMQ0p0WVhSbGNtbGhiSE1pT21aaGJITmxmU3dpY21Wd2NtOWtkV05wWW14bElqcG1ZV3h6WlgxOWZRPT0iLCJzaWduYXR1cmVzIjpbeyJrZXlpZCI6IlNIQTI1NjpjYUVKV1lKU3h5MVNWRjJLT2JtNVJyM1l0NnhJYjRUMnc1NkZIdENnOFdJIiwic2lnIjoiTUVRQ0lDdXZnMFhxd0NFQ0V5U2tvSG1zVEora3RXOUlTekdYc3AzR1FEYUJTYW02QWlBai9nKzNkdUR0RUk5dWQ0YUYvRmI0dzl5NW9nN1VOcm1PNXQ5VHhVZlZydz09In1dfQ==
@@ -286,7 +286,11 @@ tkn tr describe --last -o jsonpath="{.metadata.annotations.chains\.tekton\.dev/s
   }
 }
 ```
-And from this we can see that the payload contains a SLSA Provenance predicate.
+And from this we can see that the payload contains a SLSA Provenance predicate,
+in this case [SLSA v2]. The `builder` specifies the entity that produced this
+the software artifacts. The `invocation` is what the builder uses as its
+configuration, and the `buildConfig` is what the builder performed.
+See [schema] for all the available fields.
 
 And we can verify using:
 ```console
@@ -298,3 +302,5 @@ Verified OK
 [in-toto attestation]: https://github.com/danbev/learning-crypto/blob/main/notes/in-toto-attestations.md#in-toto-attestation
 [type hinting]: https://tekton.dev/docs/chains/intoto/#type-hinting
 [Dead Simple Signing Envelope]: https://github.com/danbev/learning-crypto/blob/main/notes/dsse.md
+[SLSA v2]: https://slsa.dev/provenance/v0.2
+[schema]: https://slsa.dev/provenance/v0.2#schema
