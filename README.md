@@ -1,4 +1,6 @@
 ## Learning Tekton
+Was actually part of Knative and was called Knative build and was extracted
+into Tekton.
 
 ### Install Tekton
 Since Tekton runs on Kubernetes we need install Tekton to Kubernetes. In this
@@ -243,6 +245,23 @@ $ make show-dsse-base64-decode
 Now this looks familiar. What we have here is an [Dead Simple Signing Envelope]
 (DSSE).
 
+The `keyid' is an identifier of the public key or certificate that can be used
+to verify the signature. But how do we get the public key/certificate?  
+So it is the signer who generates the keyid and it identifies both the algorithm
+and key that was used to sign the message.
+So where is the keyid generated in this case?
+In the case or the tekton chains task it is generated following in [wrap.go]
+and according to [Public Key Fingerprints]. We can see this using:
+```console
+$ make get-public-keyid 
+kubectl get secret signing-secrets -n tekton-chains -o jsonpath='{.data}' | jq -r '."cosign.pub"' | base64 -d
+-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEqiLuArRcZCY1s650rgKUDpj7f+b8
+9HMu3K/PDaUcR9kcyyXY8q6U+TFTkc9u84wJTsZe21wBPd/STPEzo0JrzQ==
+-----END PUBLIC KEY-----
+```
+
+
 Lets inspect the `payload`:
 ```console
 $ make show-dsse-payload
@@ -304,3 +323,5 @@ Verified OK
 [Dead Simple Signing Envelope]: https://github.com/danbev/learning-crypto/blob/main/notes/dsse.md
 [SLSA v2]: https://slsa.dev/provenance/v0.2
 [schema]: https://slsa.dev/provenance/v0.2#schema
+[Public Key Fingerprints]: https://www.rfc-editor.org/rfc/rfc4716#section-4
+[wrap.go]: https://github.com/tektoncd/chains/blob/eb7cc9f590474c9633956cf7c293028b2db5a61a/pkg/chains/signing/wrap.go

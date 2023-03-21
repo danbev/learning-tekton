@@ -77,3 +77,6 @@ show-secretes:
 get-public-key:
 	kubectl get secret signing-secrets -n tekton-chains -o jsonpath='{.data}' | jq -r '."cosign.pub"'
 
+get-public-keyid:
+	kubectl get secret signing-secrets -n tekton-chains -o jsonpath='{.data}' | jq -r '."cosign.pub"' | base64 -d
+
