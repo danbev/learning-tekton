@@ -245,13 +245,14 @@ $ make show-dsse-base64-decode
 Now this looks familiar. What we have here is an [Dead Simple Signing Envelope]
 (DSSE).
 
-The `keyid' is an identifier of the public key or certificate that can be used
+<a id="keyid" />
+The `keyid` is an identifier of the public key or certificate that can be used
 to verify the signature. But how do we get the public key/certificate?  
 So it is the signer who generates the keyid and it identifies both the algorithm
-and key that was used to sign the message.
-So where is the keyid generated in this case?
-In the case or the tekton chains task it is generated following in [wrap.go]
-and according to [Public Key Fingerprints]. We can see this using:
+and key that was used to sign the message. So where is the keyid generated in
+this case?
+In the case or the tekton chains task it is generated in [wrap.go] and follows
+the [Public Key Fingerprints]. We can see this using:
 ```console
 $ make get-public-keyid 
 kubectl get secret signing-secrets -n tekton-chains -o jsonpath='{.data}' | jq -r '."cosign.pub"' | base64 -d
@@ -260,7 +261,6 @@ MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEqiLuArRcZCY1s650rgKUDpj7f+b8
 9HMu3K/PDaUcR9kcyyXY8q6U+TFTkc9u84wJTsZe21wBPd/STPEzo0JrzQ==
 -----END PUBLIC KEY-----
 ```
-
 
 Lets inspect the `payload`:
 ```console
