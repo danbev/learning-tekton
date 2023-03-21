@@ -245,12 +245,13 @@ $ make show-dsse-base64-decode
 Now this looks familiar. What we have here is an [Dead Simple Signing Envelope]
 (DSSE).
 
-<a id="keyid" />
+<a id="keyid"></a>
 The `keyid` is an identifier of the public key or certificate that can be used
 to verify the signature. But how do we get the public key/certificate?  
 So it is the signer who generates the keyid and it identifies both the algorithm
 and key that was used to sign the message. So where is the keyid generated in
 this case?
+
 In the case or the tekton chains task it is generated in [wrap.go] and follows
 the [Public Key Fingerprints]. We can see this using:
 ```console
