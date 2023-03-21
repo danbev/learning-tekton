@@ -67,3 +67,13 @@ save-dsse:
 
 verify-signature: save-dsse
 	cosign verify-blob -d --key k8s://tekton-chains/signing-secrets --signature attestation attestation
+
+list-secretes:
+	kubectl describe secret -n tekton-chains
+
+show-secretes:
+	kubectl get secret signing-secrets -n tekton-chains -o jsonpath='{.data}' | jq
+
+get-public-key:
+	kubectl get secret signing-secrets -n tekton-chains -o jsonpath='{.data}' | jq -r '."cosign.pub"'
+
