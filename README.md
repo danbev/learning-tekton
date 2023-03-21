@@ -252,7 +252,7 @@ So it is the signer who generates the keyid and it identifies both the algorithm
 and key that was used to sign the message. So where is the keyid generated in
 this case?
 
-In the case or the tekton chains task it is generated in [wrap.go] and follows
+In the case of the tekton chains task it is generated in [wrap.go] and follows
 the [Public Key Fingerprints]. We can see this using:
 ```console
 $ make get-public-keyid 
