@@ -411,6 +411,8 @@ Body: {
   }
 }
 ```
+We could calculate the fingerprint of the `publicKey` and compare it to the
+keyid and if they are the same we know that this public key matches the keyid.
 
 
 [in-toto attestation]: https://github.com/danbev/learning-crypto/blob/main/notes/in-toto-attestations.md#in-toto-attestation
