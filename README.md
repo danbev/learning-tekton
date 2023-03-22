@@ -252,8 +252,36 @@ So it is the signer who generates the keyid and it identifies both the algorithm
 and key that was used to sign the message. So where is the keyid generated in
 this case?
 
-In the case of the tekton chains task it is generated in [wrap.go] and follows
-the [Public Key Fingerprints]. We can see this using:
+In the case of the tekton chains task it is generated in [wrap.go]:
+```go
+func Wrap(ctx context.Context, s Signer) (Signer, error) {
+	pub, err := s.PublicKey()
+	if err != nil {
+		return nil, err
+	}
+
+	// Generate public key fingerprint
+	sshpk, err := ssh.NewPublicKey(pub)
+	if err != nil {
+		return nil, err
+	}
+	fingerprint := ssh.FingerprintSHA256(sshpk)
+```
+And in [ssh.FingerprintSHA256] we have:
+```go
+// FingerprintSHA256 returns the user presentation of the key's
+// fingerprint as unpadded base64 encoded sha256 hash.
+// This format was introduced from OpenSSH 6.8.
+// https://www.openssh.com/txt/release-6.8
+// https://tools.ietf.org/html/rfc4648#section-3.2 (unpadded base64 encoding)
+func FingerprintSHA256(pubKey PublicKey) string {
+	sha256sum := sha256.Sum256(pubKey.Marshal())
+	hash := base64.RawStdEncoding.EncodeToString(sha256sum[:])
+	return "SHA256:" + hash
+}
+```
+
+TODO: add target that generates the keyid from the public key.
 ```console
 $ make get-public-keyid 
 kubectl get secret signing-secrets -n tekton-chains -o jsonpath='{.data}' | jq -r '."cosign.pub"' | base64 -d
@@ -324,5 +352,5 @@ Verified OK
 [Dead Simple Signing Envelope]: https://github.com/danbev/learning-crypto/blob/main/notes/dsse.md
 [SLSA v2]: https://slsa.dev/provenance/v0.2
 [schema]: https://slsa.dev/provenance/v0.2#schema
-[Public Key Fingerprints]: https://www.rfc-editor.org/rfc/rfc4716#section-4
-[wrap.go]: https://github.com/tektoncd/chains/blob/eb7cc9f590474c9633956cf7c293028b2db5a61a/pkg/chains/signing/wrap.go
+[wrap.go]: https://github.com/tektoncd/chains/blob/eb7cc9f590474c9633956cf7c293028b2db5a61a/pkg/chains/signing/wrap.go#L42
+[ssh.FingerprintSHA256]: https://cs.opensource.google/go/x/crypto/+/master:ssh/keys.go;l=1443?q=FingerprintSHA256&ss=go%2Fx%2Fcrypto
