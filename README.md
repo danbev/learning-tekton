@@ -292,6 +292,8 @@ ssh-keygen -e -l  -f public_key_ssh
 tkn tr describe --last -o jsonpath="{.metadata.annotations.chains\.tekton\.dev/signature-taskrun-dc37cde4-4d57-47eb-9e10-67153e440db2}" | base64 -d | jq '.signatures[].keyid'
 "SHA256:caEJWYJSxy1SVF2KObm5Rr3Yt6xIb4T2w56FHtCg8WI"
 ```
+The last line above is the keyid from the sigatures field in the example
+envelope from above.
 
 Lets inspect the `payload`:
 ```console
