@@ -281,14 +281,16 @@ func FingerprintSHA256(pubKey PublicKey) string {
 }
 ```
 
-TODO: add target that generates the keyid from the public key.
+We can check use `ssh-keygen` to display the keyid for our public key using
+the following commands:
 ```console
-$ make get-public-keyid 
-kubectl get secret signing-secrets -n tekton-chains -o jsonpath='{.data}' | jq -r '."cosign.pub"' | base64 -d
------BEGIN PUBLIC KEY-----
-MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEqiLuArRcZCY1s650rgKUDpj7f+b8
-9HMu3K/PDaUcR9kcyyXY8q6U+TFTkc9u84wJTsZe21wBPd/STPEzo0JrzQ==
------END PUBLIC KEY-----
+$ make get-public-keyid
+kubectl get secret signing-secrets -n tekton-chains -o jsonpath='{.data}' | jq -r '."cosign.pub"' | base64 -d > public_key
+ssh-keygen -f public_key -i -mPKCS8 > public_key_ssh 
+ssh-keygen -e -l  -f public_key_ssh
+256 SHA256:caEJWYJSxy1SVF2KObm5Rr3Yt6xIb4T2w56FHtCg8WI no comment (ECDSA)
+tkn tr describe --last -o jsonpath="{.metadata.annotations.chains\.tekton\.dev/signature-taskrun-dc37cde4-4d57-47eb-9e10-67153e440db2}" | base64 -d | jq '.signatures[].keyid'
+"SHA256:caEJWYJSxy1SVF2KObm5Rr3Yt6xIb4T2w56FHtCg8WI"
 ```
 
 Lets inspect the `payload`:

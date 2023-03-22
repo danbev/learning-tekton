@@ -78,5 +78,9 @@ get-public-key:
 	kubectl get secret signing-secrets -n tekton-chains -o jsonpath='{.data}' | jq -r '."cosign.pub"'
 
 get-public-keyid:
-	kubectl get secret signing-secrets -n tekton-chains -o jsonpath='{.data}' | jq -r '."cosign.pub"' | base64 -d
+	kubectl get secret signing-secrets -n tekton-chains -o jsonpath='{.data}' | jq -r '."cosign.pub"' | base64 -d > public_key
+	ssh-keygen -f public_key -i -mPKCS8 > public_key_ssh 
+	ssh-keygen -e -l  -f public_key_ssh
+	tkn tr describe --last -o jsonpath="{.metadata.annotations.chains\.tekton\.dev/signature-taskrun-$(shell tkn tr describe --last -o  jsonpath='{.metadata.uid}')}" | base64 -d | jq '.signatures[].keyid'
+
 
