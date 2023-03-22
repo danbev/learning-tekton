@@ -38,6 +38,7 @@ cosign-keygen:
 
 configure-chains:
 	kubectl patch configmap chains-config -n tekton-chains -p='{"data":{"artifacts.oci.storage": "", "artifacts.taskrun.format":"in-toto", "artifacts.taskrun.storage": "tekton"}}'
+	kubectl patch configmap chains-config -n tekton-chains -p='{"data":{"transparency.enabled": "true"}}'
 
 show-chains-configmap:
 	kubectl get configmap -n tekton-chains
@@ -83,4 +84,8 @@ get-public-keyid:
 	ssh-keygen -e -l  -f public_key_ssh
 	tkn tr describe --last -o jsonpath="{.metadata.annotations.chains\.tekton\.dev/signature-taskrun-$(shell tkn tr describe --last -o  jsonpath='{.metadata.uid}')}" | base64 -d | jq '.signatures[].keyid'
 
+show-rekor-log:
+	@curl -s https://rekor.sigstore.dev/api/v1/log/entries?logIndex=16027962 | jq -r '.[].body' | base64 -d | jq
 
+public-key-from-rekor-log:
+	curl -s https://rekor.sigstore.dev/api/v1/log/entries?logIndex=16027962 | jq -r '.[].body' | base64 -d | jq -r '.spec.publicKey' | base64 -d
