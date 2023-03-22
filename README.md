@@ -369,7 +369,48 @@ cosign verify-blob -d --key k8s://tekton-chains/signing-secrets --signature atte
 Verified OK
 ```
 
-### Rekor entry
+### keyid lookup in Rekor
+Let say we have an attestation envelope and one of the signatures entries
+contains a keyid and a sig field. If we want to lookup the public key in Rekor
+for this keyid, how would we do that?
+
+We can hash the payload of the envelope:
+```console
+$ tkn tr describe --last -o jsonpath="{.metadata.annotations.chains\.tekton\.dev/signature-taskrun-03f26b1e-50d0-402c-9b54-f22880b3893c}" | base64 -d | jq -r '.payload' | base64 -d | sha256sum
+39e86413a7f13a1e20d1bb915df4fab8a58677e78a6b335bb2e614be8bef1dc8  -
+```
+And then use that hash to lookup the the entry using:
+```console
+$ rekor-cli search --sha 39e86413a7f13a1e20d1bb915df4fab8a58677e78a6b335bb2e614be8bef1dc8
+Found matching entries (listed by UUID):
+24296fb24b8ad77a27dbac48342e32d86ca2e056106ff7e94cd4a6ed2a12de00b7ffc57fc2f2c2e4
+24296fb24b8ad77ae0d13d8e6787e796456e52513fcb8a0bf77fd6f338a1575296bc8a9653e50007
+```
+And the we can use the following command to look up one of those entries
+to get the public key:
+```console
+$ rekor-cli get --uuid 24296fb24b8ad77a27dbac48342e32d86ca2e056106ff7e94cd4a6ed2a12de00b7ffc57fc2f2c2e4
+LogID: c0d23d6ad406973f9559f3ba2d1ca01f84147d8ffc5b8445c224f98b9591801d
+Attestation: {"_type":"https://in-toto.io/Statement/v0.1","predicateType":"https://slsa.dev/provenance/v0.2","subject":null,"predicate":{"builder":{"id":"https://tekton.dev/chains/v2"},"buildType":"tekton.dev/v1beta1/TaskRun","invocation":{"configSource":{},"parameters":{}},"buildConfig":{"steps":[{"entryPoint":"#!/usr/bin/env sh\necho 'gcr.io/foo/bar' | tee /tekton/results/TEST_URL\necho \"danbev-tekton-chains-example\" | sha256sum | tr -d '-' | tee /tekton/results/TEST_DIGEST","arguments":null,"environment":{"container":"create-image","image":"docker.io/library/busybox@sha256:b5d6fe0712636ceb7430189de28819e195e8966372edfc2d9409d79402a0dc16"},"annotations":null}]},"metadata":{"buildStartedOn":"2023-03-22T10:05:59Z","buildFinishedOn":"2023-03-22T10:06:03Z","completeness":{"parameters":false,"environment":false,"materials":false},"reproducible":false}}}
+Index: 16028007
+IntegratedTime: 2023-03-22T10:06:31Z
+UUID: 24296fb24b8ad77a27dbac48342e32d86ca2e056106ff7e94cd4a6ed2a12de00b7ffc57fc2f2c2e4
+Body: {
+  "IntotoObj": {
+    "content": {
+      "hash": {
+        "algorithm": "sha256",
+        "value": "13ce08f7ba256f394700b6ee68afcf85dc06c438587551319d3e150a247de0a1"
+      },
+      "payloadHash": {
+        "algorithm": "sha256",
+        "value": "39e86413a7f13a1e20d1bb915df4fab8a58677e78a6b335bb2e614be8bef1dc8"
+      }
+    },
+    "publicKey": "LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJemowREFRY0RRZ0FFcWlMdUFyUmNaQ1kxczY1MHJnS1VEcGo3ZitiOAo5SE11M0svUERhVWNSOWtjeXlYWThxNlUrVEZUa2M5dTg0d0pUc1plMjF3QlBkL1NUUEV6bzBKcnpRPT0KLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tCg=="
+  }
+}
+```
 
 
 [in-toto attestation]: https://github.com/danbev/learning-crypto/blob/main/notes/in-toto-attestations.md#in-toto-attestation

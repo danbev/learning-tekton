@@ -57,7 +57,7 @@ show-dsse:
 	@tkn tr describe --last -o jsonpath="{.metadata.annotations.chains\.tekton\.dev/signature-taskrun-$(shell tkn tr describe --last -o  jsonpath='{.metadata.uid}')}"
 
 show-dsse-base64-decode:
-	@tkn tr describe --last -o jsonpath="{.metadata.annotations.chains\.tekton\.dev/signature-taskrun-$(shell tkn tr describe --last -o  jsonpath='{.metadata.uid}')}" | base64 -d | jq
+	tkn tr describe --last -o jsonpath="{.metadata.annotations.chains\.tekton\.dev/signature-taskrun-$(shell tkn tr describe --last -o  jsonpath='{.metadata.uid}')}" | base64 -d | jq
 
 show-dsse-payload:
 	tkn tr describe --last -o jsonpath="{.metadata.annotations.chains\.tekton\.dev/signature-taskrun-$(shell tkn tr describe --last -o  jsonpath='{.metadata.uid}')}"  | base64 -d | jq -r '.payload' | base64 -d | jq
@@ -85,7 +85,13 @@ get-public-keyid:
 	tkn tr describe --last -o jsonpath="{.metadata.annotations.chains\.tekton\.dev/signature-taskrun-$(shell tkn tr describe --last -o  jsonpath='{.metadata.uid}')}" | base64 -d | jq '.signatures[].keyid'
 
 show-rekor-log:
-	@curl -s https://rekor.sigstore.dev/api/v1/log/entries?logIndex=16027962 | jq -r '.[].body' | base64 -d | jq
+	curl -s https://rekor.sigstore.dev/api/v1/log/entries?logIndex=16027962 | jq -r '.[].body' | base64 -d | jq
 
 public-key-from-rekor-log:
 	curl -s https://rekor.sigstore.dev/api/v1/log/entries?logIndex=16027962 | jq -r '.[].body' | base64 -d | jq -r '.spec.publicKey' | base64 -d
+
+rekor-lookup-hash:
+	rekor-cli search --sha 39e86413a7f13a1e20d1bb915df4fab8a58677e78a6b335bb2e614be8bef1dc8
+	rekor-cli get --uuid 24296fb24b8ad77a27dbac48342e32d86ca2e056106ff7e94cd4a6ed2a12de00b7ffc57fc2f2c2e4 --format json | jq
+
+
