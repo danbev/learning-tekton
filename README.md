@@ -293,7 +293,11 @@ tkn tr describe --last -o jsonpath="{.metadata.annotations.chains\.tekton\.dev/s
 "SHA256:caEJWYJSxy1SVF2KObm5Rr3Yt6xIb4T2w56FHtCg8WI"
 ```
 The last line above is the keyid from the sigatures field in the example
-envelope from above.
+envelope from above. Notice that they match:
+```
+256 SHA256:caEJWYJSxy1SVF2KObm5Rr3Yt6xIb4T2w56FHtCg8WI no comment (ECDSA)
+    SHA256:caEJWYJSxy1SVF2KObm5Rr3Yt6xIb4T2w56FHtCg8WI"
+```
 
 Lets inspect the `payload`:
 ```console
